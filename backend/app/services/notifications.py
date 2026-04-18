@@ -134,7 +134,7 @@ def _send_email_notification(user_id: str, notification: dict) -> bool:
                 "Content-Type": "application/json",
             },
             json={
-                "from": "ZakatFlow <notifications@zakatflow.app>",
+                "from": "ZakatFlow <onboarding@resend.dev>",
                 "to": [email],
                 "subject": notification["title"],
                 "html": _build_email_html(notification),
