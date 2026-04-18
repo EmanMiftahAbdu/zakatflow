@@ -1,42 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException
 from app.core.auth import get_current_user
 from app.core.supabase import get_supabase_client
-from app.services.calculation_engine import calculate_zakat, GOLD_NISAB_GRAMS, SILVER_NISAB_GRAMS
+from app.services.calculation_engine import calculate_zakat
+from app.services.gold_price import get_gold_price, get_silver_price
 
 router = APIRouter()
-
-# Fallback prices if gold_silver_prices table is empty
-FALLBACK_GOLD_PER_GRAM = 85.0
-FALLBACK_SILVER_PER_GRAM = 1.05
-
-
-async def _get_metal_prices(supabase) -> tuple[float, float]:
-    """Get latest gold and silver prices from cache table."""
-    gold_result = (
-        supabase.table("gold_silver_prices")
-        .select("price_per_gram_usd")
-        .eq("metal", "gold")
-        .order("fetched_at", desc=True)
-        .limit(1)
-        .execute()
-    )
-    silver_result = (
-        supabase.table("gold_silver_prices")
-        .select("price_per_gram_usd")
-        .eq("metal", "silver")
-        .order("fetched_at", desc=True)
-        .limit(1)
-        .execute()
-    )
-    gold_price = (
-        float(gold_result.data[0]["price_per_gram_usd"])
-        if gold_result.data else FALLBACK_GOLD_PER_GRAM
-    )
-    silver_price = (
-        float(silver_result.data[0]["price_per_gram_usd"])
-        if silver_result.data else FALLBACK_SILVER_PER_GRAM
-    )
-    return gold_price, silver_price
 
 
 @router.post("/calculate")
@@ -53,7 +21,8 @@ async def calculate(user_id: str = Depends(get_current_user)):
     assets_result = supabase.table("assets").select("*").eq("user_id", user_id).execute()
     liabilities_result = supabase.table("liabilities").select("*").eq("user_id", user_id).execute()
 
-    gold_price, silver_price = await _get_metal_prices(supabase)
+    gold_price = await get_gold_price()
+    silver_price = await get_silver_price()
 
     # Run calculation
     result = calculate_zakat(

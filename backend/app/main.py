@@ -6,6 +6,7 @@ from app.api.zakat import router as zakat_router
 from app.api.assets import router as assets_router
 from app.api.liabilities import router as liabilities_router
 from app.api.profile import router as profile_router
+from app.api.nisab import router as nisab_router
 from app.core.config import settings
 
 app = FastAPI(
@@ -28,3 +29,4 @@ app.include_router(profile_router, prefix="/api/auth", tags=["auth"])
 app.include_router(assets_router, prefix="/api/assets", tags=["assets"])
 app.include_router(liabilities_router, prefix="/api/liabilities", tags=["liabilities"])
 app.include_router(zakat_router, prefix="/api/zakat", tags=["zakat"])
+app.include_router(nisab_router, prefix="/api/nisab", tags=["nisab"])
