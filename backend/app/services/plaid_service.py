@@ -129,6 +129,41 @@ def sync_transactions(user_id: str) -> dict[str, Any]:
     }
 
 
+def get_transactions(user_id: str) -> list[dict[str, Any]]:
+    """Fetch all transactions via /transactions/sync and return parsed dicts.
+
+    Returns a flat list of transaction dicts suitable for riba detection.
+    """
+    record = _get_record_or_raise(user_id)
+    cursor = record.get("cursor") or ""
+
+    all_added: list[Any] = []
+    has_more = True
+
+    while has_more:
+        request = TransactionsSyncRequest(
+            access_token=record["access_token"],
+            cursor=cursor,
+        )
+        response = plaid_client.transactions_sync(request)
+        all_added.extend(response["added"])
+        cursor = response["next_cursor"]
+        has_more = response["has_more"]
+
+    _TOKEN_STORE[user_id]["cursor"] = cursor
+
+    return [
+        {
+            "account_id": t.get("account_id"),
+            "name": t.get("name"),
+            "amount": t.get("amount"),
+            "category": t.get("category") or [],
+            "date": str(t.get("date")) if t.get("date") else None,
+        }
+        for t in all_added
+    ]
+
+
 def handle_webhook(payload: dict[str, Any]) -> None:
     """Dispatch incoming webhook events.
 

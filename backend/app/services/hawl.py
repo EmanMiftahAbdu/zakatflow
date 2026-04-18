@@ -59,7 +59,7 @@ def _get_notifications(days_remaining: int, is_complete: bool) -> list[dict]:
         notifications.append({
             "type": "zakat_due",
             "severity": "critical",
-            "message": "Your hawl is complete! Zakat is now due. Calculate and pay your Zakat.",
+            "message": "Your hawl is complete! Your Zakat is ready for payment.",
         })
     elif days_remaining <= 7:
         notifications.append({

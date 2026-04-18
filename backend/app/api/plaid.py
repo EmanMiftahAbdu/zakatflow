@@ -16,8 +16,9 @@ placeholder dependency is used — swap it for the real one once
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, Header, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 
+from app.core.auth import get_current_user
 from app.schemas.plaid import (
     ExchangePublicTokenRequest,
     ExchangePublicTokenResponse,
@@ -26,21 +27,12 @@ from app.schemas.plaid import (
     PlaidSyncResponse,
 )
 from app.services import plaid_service
+from app.services.plaid_sync import (
+    sync_plaid_accounts_to_assets,
+    detect_riba_from_transactions,
+)
 
 router = APIRouter()
-
-
-# ---------------------------------------------------------------------------
-# Placeholder auth dependency.
-# Replace with ``from app.core.auth import get_current_user`` once available.
-# ---------------------------------------------------------------------------
-async def get_current_user(authorization: str | None = Header(default=None)) -> str:
-    if not authorization:
-        # For local dev with placeholder config, allow an unauthenticated
-        # request and attribute it to a fixed demo user.
-        return "demo-user"
-    # TODO real JWT validation against Supabase
-    return "demo-user"
 
 
 @router.post("/link-token", response_model=LinkTokenResponse)
@@ -84,6 +76,41 @@ async def sync(user_id: str = Depends(get_current_user)) -> PlaidSyncResponse:
     except Exception as exc:  # noqa: BLE001
         raise HTTPException(status_code=502, detail=f"Plaid error: {exc}") from exc
     return PlaidSyncResponse(**payload)
+
+
+@router.post("/sync-assets")
+async def sync_assets(user_id: str = Depends(get_current_user)) -> dict:
+    """Sync Plaid accounts into ZakatFlow assets/liabilities and detect riba.
+
+    1. Fetches accounts + balances from Plaid
+    2. Maps them to asset categories (cash, stocks, retirement) or liabilities
+    3. Syncs transactions and scans for interest income (riba)
+    """
+    try:
+        # Get accounts + balances from Plaid
+        accounts_payload = plaid_service.get_accounts(user_id)
+        accounts = accounts_payload["accounts"]
+
+        # Map Plaid accounts -> ZakatFlow assets/liabilities
+        sync_result = sync_plaid_accounts_to_assets(user_id, accounts)
+
+        # Pull transactions and scan for interest income (riba)
+        riba_result = {"total_interest_detected": 0, "accounts_with_interest": 0}
+        try:
+            txn_data = plaid_service.get_transactions(user_id)
+            riba_result = detect_riba_from_transactions(user_id, txn_data)
+        except (LookupError, Exception):
+            pass  # Transactions may not be available yet
+
+        return {
+            "accounts_synced": len(accounts),
+            **sync_result,
+            "riba": riba_result,
+        }
+    except LookupError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f"Plaid sync error: {exc}") from exc
 
 
 @router.post("/webhook")
