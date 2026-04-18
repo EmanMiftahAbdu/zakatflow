@@ -50,7 +50,12 @@ async def exchange_public_token(
     user_id: str = Depends(get_current_user),
 ) -> ExchangePublicTokenResponse:
     try:
-        payload = plaid_service.exchange_public_token(user_id, body.public_token)
+        payload = plaid_service.exchange_public_token(
+            user_id,
+            body.public_token,
+            institution_name=body.institution_name,
+            institution_id=body.institution_id,
+        )
     except Exception as exc:  # noqa: BLE001
         raise HTTPException(status_code=502, detail=f"Plaid error: {exc}") from exc
     return ExchangePublicTokenResponse(**payload)
@@ -65,6 +70,24 @@ async def list_accounts(user_id: str = Depends(get_current_user)) -> PlaidAccoun
     except Exception as exc:  # noqa: BLE001
         raise HTTPException(status_code=502, detail=f"Plaid error: {exc}") from exc
     return PlaidAccountsResponse(**payload)
+
+
+@router.get("/institutions")
+async def list_institutions(user_id: str = Depends(get_current_user)) -> list[dict]:
+    """List all linked institutions for the current user."""
+    return plaid_service.get_linked_institutions(user_id)
+
+
+@router.delete("/institutions/{item_id}")
+async def unlink_institution(
+    item_id: str,
+    user_id: str = Depends(get_current_user),
+) -> dict:
+    """Unlink an institution by item_id."""
+    removed = plaid_service.unlink_institution(user_id, item_id)
+    if not removed:
+        raise HTTPException(status_code=404, detail=f"Item {item_id} not found")
+    return {"ok": True, "item_id": item_id}
 
 
 @router.post("/sync", response_model=PlaidSyncResponse)

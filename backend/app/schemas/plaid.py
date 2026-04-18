@@ -23,13 +23,10 @@ class ExchangePublicTokenRequest(BaseModel):
 
 
 class ExchangePublicTokenResponse(BaseModel):
-    """Confirmation returned after exchanging for a long-lived access token.
-
-    The access token itself is NEVER returned to the frontend — only stored
-    server-side, keyed by the authenticated user.
-    """
+    """Confirmation returned after exchanging for a long-lived access token."""
 
     item_id: str
+    institution_name: str = ""
     ok: bool = True
 
 
@@ -43,17 +40,19 @@ class PlaidAccount(BaseModel):
     current_balance: float | None = None
     available_balance: float | None = None
     iso_currency_code: str | None = None
+    item_id: str = ""
+    institution_name: str = ""
 
 
 class PlaidAccountsResponse(BaseModel):
-    item_id: str
+    items_count: int
     accounts: list[PlaidAccount]
 
 
 class PlaidSyncResponse(BaseModel):
     """Summary returned after triggering a balance/transaction sync."""
 
-    item_id: str
+    items_synced: int = 1
     accounts_synced: int
     transactions_added: int = 0
     transactions_modified: int = 0
