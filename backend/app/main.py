@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.health import router as health_router
+from app.api.plaid import router as plaid_router
 from app.api.zakat import router as zakat_router
 from app.api.assets import router as assets_router
 from app.api.liabilities import router as liabilities_router
@@ -30,3 +31,4 @@ app.include_router(assets_router, prefix="/api/assets", tags=["assets"])
 app.include_router(liabilities_router, prefix="/api/liabilities", tags=["liabilities"])
 app.include_router(zakat_router, prefix="/api/zakat", tags=["zakat"])
 app.include_router(nisab_router, prefix="/api/nisab", tags=["nisab"])
+app.include_router(plaid_router, prefix="/api/plaid", tags=["plaid"])

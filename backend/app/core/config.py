@@ -17,6 +17,17 @@ class Settings(BaseSettings):
     # CORS
     cors_origins: list[str] = ["http://localhost:3000"]
 
+    # Plaid (placeholders — override via .env)
+    # plaid_env: one of "sandbox", "development", "production"
+    plaid_client_id: str = "your-plaid-client-id"
+    plaid_secret: str = "your-plaid-sandbox-secret"
+    plaid_env: str = "sandbox"
+    plaid_products: list[str] = ["auth", "transactions"]
+    plaid_country_codes: list[str] = ["US"]
+    plaid_language: str = "en"
+    plaid_webhook_url: str = "http://localhost:8000/api/plaid/webhook"
+    plaid_client_name: str = "ZakatFlow"
+
     model_config = {"env_file": "../.env", "extra": "ignore"}
 
 
