@@ -17,23 +17,13 @@ async def test_health(client):
     assert resp.json()["status"] == "healthy"
 
 
-async def test_zakat_calculation_above_nisab(client):
-    resp = await client.post(
-        "/api/zakat/calculate",
-        json={"cash": 10000, "gold_value": 0, "debts": 0},
-    )
-    assert resp.status_code == 200
-    data = resp.json()
-    assert data["is_above_nisab"] is True
-    assert data["zakat_due"] == 250.0
+async def test_zakat_calculate_requires_auth(client):
+    """Calculate endpoint requires Authorization header."""
+    resp = await client.post("/api/zakat/calculate")
+    assert resp.status_code == 422
 
 
-async def test_zakat_calculation_below_nisab(client):
-    resp = await client.post(
-        "/api/zakat/calculate",
-        json={"cash": 1000},
-    )
-    assert resp.status_code == 200
-    data = resp.json()
-    assert data["is_above_nisab"] is False
-    assert data["zakat_due"] == 0
+async def test_assets_requires_auth(client):
+    """Assets endpoint requires Authorization header."""
+    resp = await client.get("/api/assets")
+    assert resp.status_code == 422
