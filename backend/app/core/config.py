@@ -13,6 +13,7 @@ class Settings(BaseSettings):
 
     # API Keys
     goldapi_key: str = ""
+    resend_api_key: str = ""
 
     # CORS
     cors_origins: list[str] = ["http://localhost:3000"]

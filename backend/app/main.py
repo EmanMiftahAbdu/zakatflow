@@ -8,6 +8,8 @@ from app.api.assets import router as assets_router
 from app.api.liabilities import router as liabilities_router
 from app.api.profile import router as profile_router
 from app.api.nisab import router as nisab_router
+from app.api.hawl import router as hawl_router
+from app.api.notifications import router as notifications_router
 from app.core.config import settings
 
 app = FastAPI(
@@ -32,3 +34,5 @@ app.include_router(liabilities_router, prefix="/api/liabilities", tags=["liabili
 app.include_router(zakat_router, prefix="/api/zakat", tags=["zakat"])
 app.include_router(nisab_router, prefix="/api/nisab", tags=["nisab"])
 app.include_router(plaid_router, prefix="/api/plaid", tags=["plaid"])
+app.include_router(hawl_router, prefix="/api/hawl", tags=["hawl"])
+app.include_router(notifications_router, prefix="/api/notifications", tags=["notifications"])
