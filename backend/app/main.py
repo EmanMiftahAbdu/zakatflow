@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.health import router as health_router
+from app.api.plaid import router as plaid_router
 from app.api.zakat import router as zakat_router
 from app.core.config import settings
 
@@ -22,3 +23,4 @@ app.add_middleware(
 
 app.include_router(health_router, prefix="/api", tags=["health"])
 app.include_router(zakat_router, prefix="/api/zakat", tags=["zakat"])
+app.include_router(plaid_router, prefix="/api/plaid", tags=["plaid"])
