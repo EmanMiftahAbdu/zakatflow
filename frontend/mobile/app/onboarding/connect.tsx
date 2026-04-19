@@ -3,7 +3,8 @@ import {
   View, Text, TouchableOpacity, ScrollView, StyleSheet, TextInput, Modal, Alert,
 } from 'react-native';
 import { router } from 'expo-router';
-import { WebView } from 'react-native-webview';
+import { create, open } from 'react-native-plaid-link-sdk';
+import type { LinkSuccess, LinkExit } from 'react-native-plaid-link-sdk';
 import { useZakatStore } from '../../store/zakatStore';
 import { Button, RibaBadge, CleanBadge, SectionLabel } from '../../components/ui';
 import { Colors } from '../../constants/colors';
@@ -17,31 +18,10 @@ function karat(k: number) {
   return map[k] ?? 1.0;
 }
 
-function buildPlaidHtml(token: string): string {
-  return `<!DOCTYPE html>
-<html><head><meta name="viewport" content="width=device-width,initial-scale=1">
-<script src="https://cdn.plaid.com/link/v2/stable/link-initialize.js"><\/script>
-</head><body style="margin:0;background:#fff">
-<script>
-var handler = Plaid.create({
-  token: '${token}',
-  onSuccess: function(public_token, metadata) {
-    window.ReactNativeWebView.postMessage(JSON.stringify({type:'success',public_token:public_token}));
-  },
-  onExit: function(err, metadata) {
-    window.ReactNativeWebView.postMessage(JSON.stringify({type:'exit',error:err}));
-  },
-  onLoad: function() { handler.open(); }
-});
-<\/script></body></html>`;
-}
-
 export default function ConnectScreen() {
   const { addAsset, assets, completeOnboarding, persistAsset, loadAssets } = useZakatStore();
   const [plaidLinked, setPlaidLinked] = useState(false);
   const [plaidLoading, setPlaidLoading] = useState(false);
-  const [linkToken, setLinkToken] = useState<string | null>(null);
-  const [showPlaidWebView, setShowPlaidWebView] = useState(false);
   const [showGoldModal, setShowGoldModal] = useState(false);
   const [showCashModal, setShowCashModal] = useState(false);
 
@@ -59,36 +39,29 @@ export default function ConnectScreen() {
     setPlaidLoading(true);
     try {
       const { link_token } = await getPlaidLinkToken();
-      setLinkToken(link_token);
-      setShowPlaidWebView(true);
+      create({ token: link_token });
+      await open({
+        onSuccess: async (success: LinkSuccess) => {
+          try {
+            await exchangePlaidToken(success.publicToken);
+            await syncPlaidAssets();
+            await loadAssets();
+            setPlaidLinked(true);
+            Alert.alert('Connected', 'Accounts linked successfully.');
+          } catch {
+            Alert.alert('Error', 'Accounts connected but failed to sync. Try again from Overview.');
+            setPlaidLinked(true);
+          }
+        },
+        onExit: (_exit: LinkExit) => {
+          // User closed Plaid Link — nothing to do
+        },
+      });
     } catch {
       Alert.alert('Error', 'Could not connect to Plaid. Make sure the backend is running.');
     } finally {
       setPlaidLoading(false);
     }
-  }
-
-  async function onPlaidMessage(event: { nativeEvent: { data: string } }) {
-    try {
-      const msg = JSON.parse(event.nativeEvent.data);
-      if (msg.type === 'success') {
-        setShowPlaidWebView(false);
-        setLinkToken(null);
-        try {
-          await exchangePlaidToken(msg.public_token);
-          await syncPlaidAssets();
-          await loadAssets();
-          setPlaidLinked(true);
-          Alert.alert('Connected', 'Accounts linked successfully.');
-        } catch {
-          Alert.alert('Error', 'Accounts connected but failed to sync. Try again from Overview.');
-          setPlaidLinked(true);
-        }
-      } else if (msg.type === 'exit') {
-        setShowPlaidWebView(false);
-        setLinkToken(null);
-      }
-    } catch {}
   }
 
   async function addGold() {
@@ -162,27 +135,6 @@ export default function ConnectScreen() {
           </Text>
         </TouchableOpacity>
       </View>
-
-      {/* Plaid WebView Modal */}
-      <Modal visible={showPlaidWebView} animationType="slide">
-        <View style={{ flex: 1 }}>
-          <TouchableOpacity
-            style={{ padding: 16, paddingTop: 60, backgroundColor: Colors.white }}
-            onPress={() => { setShowPlaidWebView(false); setLinkToken(null); }}
-          >
-            <Text style={{ fontSize: 16, color: Colors.green700, fontWeight: '600' }}>Cancel</Text>
-          </TouchableOpacity>
-          {linkToken && (
-            <WebView
-              source={{ html: buildPlaidHtml(linkToken) }}
-              onMessage={onPlaidMessage}
-              javaScriptEnabled
-              domStorageEnabled
-              style={{ flex: 1 }}
-            />
-          )}
-        </View>
-      </Modal>
 
       {/* Connected / added assets */}
       {assets.length > 0 && (

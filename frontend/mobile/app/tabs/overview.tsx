@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import {
   View, Text, ScrollView, StyleSheet, TouchableOpacity,
 } from 'react-native';
+import { router } from 'expo-router';
 import { useZakatStore } from '../../store/zakatStore';
 import { RibaBadge, CleanBadge, HawlProgressBar, Card, SectionLabel } from '../../components/ui';
 import { Colors } from '../../constants/colors';
@@ -165,7 +166,11 @@ export default function OverviewScreen() {
         })}
       </View>
 
-      <TouchableOpacity style={styles.addAccountBtn} activeOpacity={0.8}>
+      <TouchableOpacity
+        style={styles.addAccountBtn}
+        activeOpacity={0.8}
+        onPress={() => router.push('/onboarding/connect')}
+      >
         <Text style={styles.addAccountText}>+ Add account</Text>
       </TouchableOpacity>
     </ScrollView>
