@@ -16,7 +16,7 @@ class Settings(BaseSettings):
     resend_api_key: str = ""
 
     # CORS
-    cors_origins: list[str] = ["http://localhost:3000"]
+    cors_origins: list[str] = ["http://localhost:3000", "http://localhost:8081", "*"]
 
     # Plaid (placeholders — override via .env)
     # plaid_env: one of "sandbox", "development", "production"

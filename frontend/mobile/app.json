@@ -1,0 +1,38 @@
+{
+  "expo": {
+    "name": "ZakatFlow",
+    "slug": "zakatflow",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "backgroundColor": "#1A3D2B"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.zakatflow.app"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#1A3D2B"
+      },
+      "package": "com.zakatflow.app"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-notifications",
+        {
+          "sounds": []
+        }
+      ],
+      "expo-font",
+      "expo-asset"
+    ],
+    "scheme": "zakatflow",
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}

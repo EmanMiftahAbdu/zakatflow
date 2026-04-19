@@ -90,6 +90,29 @@ async def unlink_institution(
     return {"ok": True, "item_id": item_id}
 
 
+@router.get("/transactions")
+async def list_transactions(user_id: str = Depends(get_current_user)) -> list[dict]:
+    """Return synced transactions across all linked institutions."""
+    try:
+        return plaid_service.get_transactions(user_id)
+    except LookupError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except Exception as exc:  # noqa: BLE001
+        raise HTTPException(status_code=502, detail=f"Plaid error: {exc}") from exc
+
+
+@router.post("/refresh")
+async def refresh_balances(user_id: str = Depends(get_current_user)) -> PlaidAccountsResponse:
+    """Refresh account balances only (no transaction sync)."""
+    try:
+        payload = plaid_service.get_accounts(user_id)
+    except LookupError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except Exception as exc:  # noqa: BLE001
+        raise HTTPException(status_code=502, detail=f"Plaid error: {exc}") from exc
+    return PlaidAccountsResponse(**payload)
+
+
 @router.post("/sync", response_model=PlaidSyncResponse)
 async def sync(user_id: str = Depends(get_current_user)) -> PlaidSyncResponse:
     try:

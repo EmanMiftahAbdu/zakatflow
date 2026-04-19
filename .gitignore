@@ -11,6 +11,7 @@ __pycache__/
 dist/
 build/
 .venv/
+.venv2/
 venv/
 .eggs/
 
@@ -41,3 +42,4 @@ coverage/
 # Misc
 *.log
 .vercel
+test-plaid.html
